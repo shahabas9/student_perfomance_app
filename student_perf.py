@@ -3,6 +3,17 @@ import pandas as pd
 import numpy as np
 import pickle
 from sklearn.preprocessing import LabelEncoder,StandardScaler
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
+
+
+
+
+uri = "mongodb+srv://shabunfiz:7gX2bN72xjVcuVZv@shahabas.b0u5f.mongodb.net/?retryWrites=true&w=majority&appName=shahabas"
+# Create a new client and connect to the server
+client = MongoClient(uri)
+db=client['Student']
+collection=db["perfomance"]
 
 
 def load_model():
@@ -33,15 +44,24 @@ def main():
     paper_solved=st.number_input("Question Paper Revised",min_value=1,max_value=10,value=3)
 
     if st.button("predict-your_score"):
-        user_data={
-            "Hours Studied" : hours,
-            "Previous Scores" : prevoius_scores,
-            "Extracurricular Activities" : extra,
-            "Sleep Hours" :sleep,
-            "Sample Question Papers Practiced" :paper_solved
+        user_data = {
+            "Hours Studied": int(hours),  # Ensure conversion to Python int
+            "Previous Scores": int(prevoius_scores),
+            "Extracurricular Activities": str(extra),
+            "Sleep Hours": int(sleep),
+            "Sample Question Papers Practiced": int(paper_solved)
         }
-        prediction=predict_data(user_data)
-        st.success(f"the perfomance is {prediction[0]}")
+        prediction = predict_data(user_data)
+        st.success(f"The performance is {prediction[0]}")
+        
+        user_data["prediction"] = float(prediction[0])  # Convert prediction to float if needed
+        
+        for key, value in user_data.items():
+            if isinstance(value, (np.int64, np.float64)):
+                print(key,value)
+                user_data[key] = value.item()  # Converts numpy types to native Python
+        
+        collection.insert_one(user_data)
 
 if __name__ == "__main__":
     main()
